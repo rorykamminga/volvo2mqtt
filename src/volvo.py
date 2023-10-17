@@ -250,7 +250,8 @@ def check_supported_endpoints():
                 # If engine state could be found in engine state endpoint, skip the second engine running sensor
                 continue
 
-            if entity.get('url'):
+            if entity.get('url') \
+                    and (len(settings.datapoints) == 0 or any(entity["id"] in settings.datapoints)):
                 state = api_call(entity["url"], "GET", vin, entity["id"])
             else:
                 state = ""

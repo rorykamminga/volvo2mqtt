@@ -6,7 +6,7 @@ import sys
 import config
 from logging import handlers
 from datetime import datetime
-from const import units
+from const import units, supported_entities
 from config import settings
 from pathlib import Path
 
@@ -152,3 +152,8 @@ def validate_settings():
         update_interval = settings["updateInterval"]
         if update_interval < 60:
             raise Exception("Settings invalid! Minimum allowed update interval is 60 seconds!")
+    
+    if len(settings.datapoints) > 0:
+        for point in settings.datapoints:
+            if not any(point in supported_entities["id"]):
+                raise Exception("Settings invalid! Entity does not exist: " + point)
