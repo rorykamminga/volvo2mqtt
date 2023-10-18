@@ -153,7 +153,13 @@ def validate_settings():
         if update_interval < 60:
             raise Exception("Settings invalid! Minimum allowed update interval is 60 seconds!")
     
-    if len(settings.datapoints) > 0:
-        for point in settings.datapoints:
-            if not any(point in supported_entities["id"]):
-                raise Exception("Settings invalid! Entity does not exist: " + point)
+    selected_datapoints = settings.volvoData["datapoints"]
+    logging.debug("Selected datapoints:")
+    logging.debug(str(selected_datapoints))
+    for datapoint in selected_datapoints:
+        if datapoint == "all":
+            break
+        if any(datapoint in d["id"] for d in supported_entities):
+            continue
+        raise Exception("Settings invalid! Datapoint not found in supported entities: " + datapoint)
+

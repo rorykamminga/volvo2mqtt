@@ -311,11 +311,17 @@ def update_ha_device(entity, vin, state):
 
 
 def create_ha_devices():
+    logging.debug("Creating HA devices")
     global subscribed_topics, devices
     for vin in volvo.vins:
         device = volvo.get_vehicle_details(vin)
         devices[vin] = device
+        logging.debug("Creating entities for device:")
+        logging.debug(str(device))
+        logging.debug("Using following supported_endpoints:")
+        logging.debug(str(volvo.supported_endpoints[vin]))
         for entity in volvo.supported_endpoints[vin]:
+            logging.debug("Creating entity for " + entity["id"])
             config = {
                         "name": entity['name'],
                         "object_id": f"volvo_{vin}_{entity['id']}",
@@ -345,6 +351,8 @@ def create_ha_devices():
             elif entity.get("domain") == "image":
                 config["url_topic"] = f"homeassistant/{entity['domain']}/{vin}_{entity['id']}/image_url"
 
+            logging.debug("Publishing config:")
+            logging.debug(str(config))
             mqtt_client.publish(
                 f"homeassistant/{entity['domain']}/volvoAAOS2mqtt/{vin}_{entity['id']}/config",
                 json.dumps(config),

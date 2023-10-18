@@ -16,6 +16,7 @@ options:
   TZ: null
   debug: false
   disable_logging: false
+  send_car_images: true
   mqtt:
     broker: "auto_broker"
     port: "auto_port"
@@ -30,12 +31,15 @@ options:
     odometerMultiplier: 1
     averageSpeedDivider: 1
     averageFuelConsumptionMultiplier: 1
+    datapoints:
+        - all
 schema:
   updateInterval: int(60,)
   babelLocale: str
   TZ: match(^.+/.+$)
   debug: bool
   disable_logging: bool
+  send_car_images: bool
   mqtt:
     broker: str
     port: str
@@ -51,7 +55,7 @@ schema:
     averageSpeedDivider: int(1,)
     averageFuelConsumptionMultiplier: int(1,)
     datapoints:
-        - match(^\b\w{5,35}\b$)?
+        - str
 arch:
   - aarch64
   - amd64

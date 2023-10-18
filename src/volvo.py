@@ -219,7 +219,8 @@ def get_vehicle_details(vin):
             "model": data['descriptions']['model'],
             "name": f"{data['descriptions']['model']} ({data['modelYear']}) - {vin}",
         }
-        mqtt.send_car_images(vin, data, device)
+        if settings.send_car_images:
+            mqtt.send_car_images(vin, data, device)
     elif response.status_code == 500 and not settings.volvoData["vin"]:
         # Workaround for some cars that are not returning vehicle details
         device = {
@@ -237,6 +238,12 @@ def get_vehicle_details(vin):
 
 def check_supported_endpoints():
     global supported_endpoints
+    
+    selected_datapoints = settings.volvoData["datapoints"]
+
+    logging.debug("Checking supported endpoints. Selected datapoints are:")
+    logging.debug(str(selected_datapoints))
+
     for vin in vins:
         supported_endpoints[vin] = []
         for entity in supported_entities:
@@ -250,17 +257,31 @@ def check_supported_endpoints():
                 # If engine state could be found in engine state endpoint, skip the second engine running sensor
                 continue
 
-            if entity.get('url') \
-                    and (len(settings.datapoints) == 0 or any(entity["id"] in settings.datapoints)):
-                state = api_call(entity["url"], "GET", vin, entity["id"])
+            if "all" in selected_datapoints or entity["id"] in selected_datapoints:
+                if entity.get('url'):
+                    logging.debug("Accepted entity: " + entity["id"])
+                    state = api_call(entity["url"], "GET", vin, entity["id"])
+                else:
+                    logging.debug("Accepted non-api entity: " + entity["id"])
+                    state = "NonApi"
             else:
-                state = ""
+                logging.debug("Rejected unselected entity: " + entity["id"])
+                state = "Rejected"
 
-            if state is not None:
-                logging.info("Success! " + entity["name"] + " is supported by your vehicle.")
-                supported_endpoints[vin].append(entity)
-            else:
-                logging.info("Failed, " + entity["name"] + " is unfortunately not supported by your vehicle.")
+            match state:
+                case "NonApi":
+                    logging.info("Success! " + entity["name"] + " is a non-API entity.")
+                    supported_endpoints[vin].append(entity)
+                case "Rejected":
+                    logging.info("Ignored! " + entity["name"] + " is not a selected datapoint.")
+                case None:
+                    logging.info("Failed, " + entity["name"] + " is unfortunately not supported by your vehicle.")
+                case _:
+                    logging.info("Success! " + entity["name"] + " is supported by your vehicle.")
+                    supported_endpoints[vin].append(entity)
+        
+        logging.debug("Final list of supported endpoints for VIN: " + vin)
+        logging.debug(str(supported_endpoints[vin]))
 
 
 def initialize_scheduler(vins):
